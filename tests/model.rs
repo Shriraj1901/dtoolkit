@@ -183,3 +183,28 @@ fn device_tree_format() {
 "
     );
 }
+
+#[test]
+fn device_tree_format_escapes_string_properties() {
+    let mut tree = DeviceTree::new();
+    tree.root
+        .add_property(DeviceTreeProperty::new("quote", "foo\"bar").unwrap());
+    tree.root
+        .add_property(DeviceTreeProperty::new("backslash", "foo\\bar").unwrap());
+    tree.root
+        .add_property(DeviceTreeProperty::new("string-list", vec!["a\"b", "c\\d"]).unwrap());
+
+    let fds = tree.to_string();
+
+    assert_eq!(
+        fds,
+        r#"/dts-v1/;
+
+/ {
+    quote = "foo\"bar";
+    backslash = "foo\\bar";
+    string-list = "a\"b", "c\\d";
+};
+"#
+    );
+}

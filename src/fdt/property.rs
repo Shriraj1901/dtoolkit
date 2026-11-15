@@ -62,9 +62,11 @@ impl FdtProperty<'_> {
                 .value_as::<crate::values::FdtStringListIterator>()
                 .map_err(|_| fmt::Error)?;
             if let Some(first) = strings.next() {
-                write!(f, " = \"{first}\"")?;
+                write!(f, " = ")?;
+                write_dts_string(f, first)?;
                 for s in strings {
-                    write!(f, ", \"{s}\"")?;
+                    write!(f, ", ")?;
+                    write_dts_string(f, s)?;
                 }
                 writeln!(f, ";")?;
                 return Ok(());
@@ -99,9 +101,26 @@ impl FdtProperty<'_> {
 }
 
 impl Display for FdtProperty<'_> {
+    /// Formats the property in the device tree source (DTS) syntax.
+    ///
+    /// The exact output may change between minor versions of the library, but
+    /// it is always valid DTS.
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         self.fmt(f, 0)
     }
+}
+
+/// Writes `string` as a double-quoted DTS string literal, escaping the
+/// characters that would otherwise end the literal or start an escape sequence.
+fn write_dts_string(f: &mut Formatter, string: &str) -> fmt::Result {
+    f.write_str("\"")?;
+    for ch in string.chars() {
+        if matches!(ch, '"' | '\\') {
+            f.write_str("\\")?;
+        }
+        write!(f, "{ch}")?;
+    }
+    f.write_str("\"")
 }
 
 #[derive(Debug, Clone)]
